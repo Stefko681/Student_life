@@ -1,7 +1,78 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
-int money, energy, psychics, knowledge, examCount = 0;
+int const MAX_PARAMETER_VALUE = 100;
+int money, energy, psychics, knowledge, examCount = 0, day = 1;
+
+void parameterRestrictions() {
+    if (energy > MAX_PARAMETER_VALUE) {
+        energy = MAX_PARAMETER_VALUE;
+    }
+    if (psychics > MAX_PARAMETER_VALUE) {
+        psychics = MAX_PARAMETER_VALUE;
+    }
+    if (knowledge > MAX_PARAMETER_VALUE) {
+        knowledge = MAX_PARAMETER_VALUE ;
+    }
+    if (energy<0) {
+        day++;
+        std::cout<<"Припадна, защото енергията ти е по-малка от 0";
+    }
+
+}
+
+void goToLessons() {
+    knowledge += 20;
+    energy -= 20;
+    psychics -= 10;
+    parameterRestrictions();
+}
+
+void studyHome() {
+    knowledge += 20;
+    energy -= 15;
+    psychics -= 20;
+    parameterRestrictions();
+}
+
+void studyWithFriends() {
+    knowledge += 5;
+    energy -= 10;
+    psychics += 10;
+    parameterRestrictions();
+}
+
+void eat() {
+    energy += 20;
+    money -= 10;
+    psychics += 5;
+    parameterRestrictions();
+}
+
+void goOut() {
+    psychics += 40;
+    money -= 25;
+    energy -= 15;
+    parameterRestrictions();
+}
+
+void sleep() {
+    energy += 50;
+    psychics += 10;
+    parameterRestrictions();
+}
+
+void work() {
+    money += 40;
+    energy -= 20;
+    psychics -= 10;
+    parameterRestrictions();
+}
+
+void goToExam() {
+    energy -= 20;
+    examCount += 1;
+}
 
 void printBeginGame() {
     std::cout << "||======================================||" << std::endl;
@@ -30,7 +101,7 @@ void printDifficultyLevel() {
     std::cout << "||======================================||" << std::endl;
 }
 
-void difficultyLevel(int n) {
+void difficultyLevel(const int n) {
     if (n == 1) {
         knowledge = 80;
         energy = 100;
@@ -51,6 +122,17 @@ void difficultyLevel(int n) {
     }
 }
 
+void printStudentStatus() {
+    std::cout << "||==========================================||" << std::endl;
+    std::cout << "||  Ден: " << day << " от 45                ||" << std::endl;
+    std::cout << "||  Пари: " << money << " лв                ||" << std::endl;
+    std::cout << "||  Енергия: " << energy << " 🔋            ||" << std::endl;
+    std::cout << "||  Психика: " << psychics << " 🧠          ||" << std::endl;
+    std::cout << "||  Знания: " << knowledge << " 📔          ||" << std::endl;
+    std::cout << "||  Взети изпити: " << examCount << " 🎓    ||" << std::endl;
+    std::cout << "||==========================================||" << std::endl;
+}
+
 void printMenu() {
     std::cout << "Какво искаш да направиш днес?" << std::endl;
     std::cout << "[1] Учиш" << std::endl;
@@ -59,55 +141,52 @@ void printMenu() {
     std::cout << "[4] Почиваш" << std::endl;
     std::cout << "[5] Работиш" << std::endl;
     std::cout << "[6] Явяваш се на изпит (ако е време)" << std::endl;
-    std::cout << "" << std::endl;
-    std::cout << "" << std::endl;
-    std::cout << "" << std::endl;
-    std::cout << "" << std::endl;
-    std::cout << "[11] Излез от играта" << std::endl;
+    std::cout << "[7] Излез от играта" << std::endl;
 }
 
-void menu(int n) {
-    
-    switch (n) {
-        case 1:study();
+void printStudyOptions() {
+    std::cout << "Избери тип учене?" << std::endl;
+    std::cout << "[1] Ходене на лекции" << std::endl;
+    std::cout << "[2] Учене вкъщи" << std::endl;
+    std::cout << "[3] Учене с приятели" << std::endl;
+}
+
+void studyOptions(const int n) {
+    if (n == 1) {
+        goToLessons();
+    }
+    if (n == 2) {
+        studyHome();
+    }
+    if (n == 3) {
+        studyWithFriends();
     }
 }
 
-void study() {
-    knowledge += 20;
-    energy -= 20;
-    psychics -= 10;
-}
 
-void eat() {
-    energy += 20;
-    money -= 10;
-    psychics += 5;
-}
-
-void goOut() {
-    psychics += 40;
-    money -= 25;
-    energy -= 15;
-}
-
-void sleep() {
-    energy += 50;
-    psychics += 10;
-}
-
-void work() {
-    money += 40;
-    energy -= 20;
-    psychics -= 10;
-}
-
-void goToExam() {
-    energy -= 20;
+void menu(const int n) {
+    switch (n) {
+        case 1: goToLessons();
+            break;
+        case 2: eat();
+            break;
+        case 3: goOut();
+            break;
+        case 4: sleep();
+            break;
+        case 5: work();
+            break;
+        case 6: if (day == 8 || day == 17 || day == 26 || day == 45) {
+                goToExam();
+            }
+            break;
+        case 7:
+        default: return;
+    }
 }
 
 
-void printEndGame() {
+void printWinGame() {
     std::cout << "||======================================||" << std::endl;
     std::cout << "||  🎓  ПОЗДРАВЛЕНИЯ!                   ||" << std::endl;
     std::cout << "||  Взе всички изпити и оцеля           ||" << std::endl;
@@ -115,7 +194,7 @@ void printEndGame() {
     std::cout << "||======================================||" << std::endl;
 }
 
-void lostGame() {
+void printLostGame() {
     std::cout << "||======================================||" << std::endl;
     std::cout << "||  💥 ИГРАТА ПРИКЛЮЧИ!                 ||" << std::endl;
     std::cout << "||  Твоята психика не издържа           ||" << std::endl;
@@ -123,16 +202,6 @@ void lostGame() {
     std::cout << "||======================================||" << std::endl;
 }
 
-void printStudentStatus() {
-    std::cout << "||======================================||" << std::endl;
-    std::cout << "||  Ден <day> от 30                     ||" << std::endl;
-    std::cout << "||  Пари: <money> лв                    ||" << std::endl;
-    std::cout << "||  Енергия: <energy> ⚡                 ||" << std::endl;
-    std::cout << "||  Психика: <psychics> 🧠              ||" << std::endl;
-    std::cout << "||  Знания: <knowledge> 📚              ||" << std::endl;
-    std::cout << "||  Взети изпити: <examCount> 🎓        ||" << std::endl;
-    std::cout << "||======================================||" << std::endl;
-}
 
 int main() {
     printBeginGame();
@@ -145,7 +214,7 @@ int main() {
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             continue;
         }
-    } while (beginGameOption != 1 && beginGameOption != 2);
+    } while (beginGameOption != 1 && beginGameOption != 2); //choose game start option
     beginGame(beginGameOption);
     if (beginGameOption == 1) {
         printDifficultyLevel();
@@ -159,20 +228,37 @@ int main() {
                 continue;
             }
         } while (DifficultyLevelOption != 1 && DifficultyLevelOption != 2 && DifficultyLevelOption != 3);
-        difficultyLevel(DifficultyLevelOption);
+        difficultyLevel(DifficultyLevelOption); //choose difficulty level
     }
-    printMenu();
-    int menuOptions;
-    do {
-        std::cout << "Избери опция 1 или 2:";
-        std::cin >> menuOptions;
-        if (std::cin.fail()) {
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            continue;
+    while (day <= 45) {
+        printMenu();
+        int menuOptions;
+        do {
+            std::cout << "Избери опция 1 или 2 или 3 или 4 или 5 или 6 или 7";
+            std::cin >> menuOptions;
+            if (std::cin.fail()) {
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                continue;
+            }
+        } while (menuOptions != 1 && menuOptions != 2 && menuOptions != 3 && menuOptions != 4 && menuOptions != 5 &&
+                 menuOptions != 6 && menuOptions != 7);
+        menu(menuOptions); //choose what to do today
+        printStudentStatus();
+        day++;
+        if (money <= 0 || psychics <= 0) {
+            printLostGame();
         }
-    } while (menuOptions != 1 && menuOptions != 2 && menuOptions != 3 && menuOptions != 4 && menuOptions != 5 &&
-             menuOptions != 6 && menuOptions != 7 && menuOptions != 8 && menuOptions != 9 && menuOptions != 10 &&
-             menuOptions != 11 && menuOptions != 12);
-    menu(menuOptions);
+        if (examCount == 5) {
+            printWinGame();
+        }
+        if (day == 45 && examCount < 5) {
+            printLostGame();
+        }
+        if (money<0) {
+            std::cout<<"Парите ти са по-малко от 0.";
+            printLostGame();
+            break;
+        }
+    }
 }
