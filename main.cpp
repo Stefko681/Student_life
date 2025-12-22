@@ -16,7 +16,7 @@ int randomNumber(const int min, const int max) {
 }
 
 //========PARAMETERS==============
-int money, energy, psychics, knowledge, successfulExams = 0, day = 1, examNumber = 1, penalty = (examNumber - 1) * 5,
+double money, energy, psychics, knowledge, successfulExams = 0, day = 1, examNumber = 1, penalty = (examNumber - 1) * 5,
         luck = randomNumber(1, 100), exam4Day = randomNumber(27, 45);
 double success = (knowledge * 0.75) + (psychics * 0.1) + (energy * 0.1) + (luck * 0.2) - penalty;
 
@@ -36,11 +36,18 @@ void parameterRestrictions() {
     }
 }
 
+
 //======CHANGE_STATS============
 void goToLessons() {
     knowledge += 20;
     energy -= 20;
     psychics -= 10;
+    int randomNum = randomNumber(1, 100);
+    if (energy < 80 && energy >= 40 && randomNum > 75) {
+        knowledge -= 10;
+    } else if (energy < 40 && randomNum > 50) {
+        knowledge -= 10;
+    }
     parameterRestrictions();
 }
 
@@ -48,6 +55,12 @@ void studyHome() {
     knowledge += 20;
     energy -= 15;
     psychics -= 20;
+    int randomNum = randomNumber(1, 100);
+    if (energy < 80 && energy >= 40 && randomNum > 75) {
+        knowledge -= 10;
+    } else if (energy < 40 && randomNum > 50) {
+        knowledge -= 10;
+    }
     parameterRestrictions();
 }
 
@@ -55,6 +68,14 @@ void studyWithFriends() {
     knowledge += 5;
     energy -= 10;
     psychics += 10;
+    int randomNum = randomNumber(1, 100);
+    if (energy < 80 && energy >= 40 && randomNum > 75) {
+        knowledge -= 2.5;
+        psychics -= 5;
+    } else if (energy < 40 && randomNum > 50) {
+        knowledge -= 2.5;
+        psychics -= 5;
+    }
     parameterRestrictions();
 }
 
@@ -62,6 +83,14 @@ void eat() {
     energy += 20;
     money -= 10;
     psychics += 5;
+    int randomNum = randomNumber(1, 100);
+    if (energy < 80 && energy >= 40 && randomNum > 75) {
+        energy -= 10;
+        psychics -= 2.5;
+    } else if (energy < 40 && randomNum > 50) {
+        energy -= 10;
+        psychics -= 2.5;
+    }
     parameterRestrictions();
 }
 
@@ -69,6 +98,12 @@ void goOut() {
     psychics += 40;
     money -= 25;
     energy -= 15;
+    int randomNum = randomNumber(1, 100);
+    if (energy < 80 && energy >= 40 && randomNum > 75) {
+        psychics -= 20;
+    } else if (energy < 40 && randomNum > 50) {
+        psychics -= 20;
+    }
     parameterRestrictions();
 }
 
@@ -82,6 +117,12 @@ void work() {
     money += 40;
     energy -= 20;
     psychics -= 10;
+    int randomNum = randomNumber(1, 100);
+    if (energy < 80 && energy >= 40 && randomNum > 75) {
+        money -= 20;
+    } else if (energy < 40 && randomNum > 50) {
+        money -= 20;
+    }
     parameterRestrictions();
 }
 
@@ -94,6 +135,13 @@ void goToExam() {
         psychics -= 30;
     }
     examNumber++;
+    int randomNum = randomNumber(1, 100);
+    if (energy < 80 && energy >= 40 && randomNum > 75) {
+        psychics -= 10;
+    } else if (energy < 40 && randomNum > 50) {
+        psychics -= 10;
+    }
+    parameterRestrictions();
 }
 
 void printBeginGame() {
@@ -223,7 +271,7 @@ void saveGame() {
         std::cout << "Играта не успя да се запази";
         return;
     }
-    int stats[] = {money, energy, psychics, knowledge, successfulExams, day};
+    double stats[] = {money, energy, psychics, knowledge, successfulExams, day};
     for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
         out << stats[i] << " ";
     }
@@ -237,7 +285,7 @@ bool loadGame() {
         std::cout << "Файлът не успя да се отвори";
         return false;
     }
-    int stats[] = {money, energy, psychics, knowledge, successfulExams, day};
+    double stats[] = {money, energy, psychics, knowledge, successfulExams, day};
     for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
         in >> stats[i];
     }
@@ -261,8 +309,48 @@ void beginGame(const int n) {
     }
 }
 
+//============RANDOM_EVENT_FOR_EVERY_DAY=======
+void receiveMoney() {
+    int rand = randomNumber(1, 30);
+    if (rand == 15) {
+        money += 30;
+    }
+    parameterRestrictions();
+}
+
+void freeCoffe() {
+    int rand = randomNumber(1, 30);
+    if (rand == 15) {
+        psychics += 10;
+    }
+    parameterRestrictions();
+}
+
+void getSick() {
+    int rand = randomNumber(1, 30);
+    if (rand == 15) {
+        energy -= 20;
+    }
+    parameterRestrictions();
+}
+
+void noElectricity() {
+    int rand = randomNumber(1, 30);
+    if (rand == 15) {
+        energy -= 20;
+    }
+    day++;
+}
+
+void randomDayEvents() {
+    receiveMoney();
+    freeCoffe();
+    getSick();
+    noElectricity();
+}
+
 int main() {
-    //==========CHOOSE_GAME_START_OPTION
+    //==========CHOOSE_GAME_START_OPTION=======
     printBeginGame();
     int beginGameOption;
     do {
@@ -291,10 +379,17 @@ int main() {
         difficultyLevel(DifficultyLevelOption);
     } //=========LOOP_TO_THE_LAST_DAY==========
     while (day <= 45) {
-        printMenu();
-        int menuOption;
         //============CHOOSE_WHAT_TO_DO_TODAY============
     backFromOption6:
+        randomDayEvents();
+        if (day == 8 || day == 17 || day == 26 || day == exam4Day || day == 45) {
+            std::cout << "Днес е ден за изпит. Отиваш автоматично!";
+            goToExam();
+            day++;
+        }
+        printMenu();
+        int menuOption;
+
         do {
             std::cout << "Избери опция 1 или 2 или 3 или 4 или 5 или 6 или 7:";
             std::cin >> menuOption;
