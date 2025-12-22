@@ -1,11 +1,24 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <random>
+
 //========CONSTANTS=============
 const int MAX_PARAMETER_VALUE = 100;
+const int STUDENT_PARAMETERS_COUNT = 6;
 const char *SAVE_FILE = "game.txt";
+//=========RANDOM_GENERATOR==============
+std::mt19937 randomGenerator(std::random_device{}());
+
+int randomNumber(const int min, const int max) {
+    std::uniform_int_distribution<int> range(min, max);
+    return range(randomGenerator);
+}
+
 //========PARAMETERS==============
-int money, energy, psychics, knowledge, examCount = 0, day = 1;
+int money, energy, psychics, knowledge, successfulExams = 0, day = 1, examNumber = 1, penalty = (examNumber - 1) * 5,
+        luck = randomNumber(1, 100), exam4Day = randomNumber(27, 45);
+double success = (knowledge * 0.75) + (psychics * 0.1) + (energy * 0.1) + (luck * 0.2) - penalty;
 
 void parameterRestrictions() {
     if (energy > MAX_PARAMETER_VALUE) {
@@ -74,7 +87,13 @@ void work() {
 
 void goToExam() {
     energy -= 20;
-    examCount += 1;
+    if (success >= 75) {
+        successfulExams++;
+        psychics += 20;
+    } else {
+        psychics -= 30;
+    }
+    examNumber++;
 }
 
 void printBeginGame() {
@@ -123,7 +142,7 @@ void printStudentStatus() {
     std::cout << "||  Енергия: " << energy << " 🔋            ||" << std::endl;
     std::cout << "||  Психика: " << psychics << " 🧠          ||" << std::endl;
     std::cout << "||  Знания: " << knowledge << " 📔          ||" << std::endl;
-    std::cout << "||  Взети изпити: " << examCount << " 🎓    ||" << std::endl;
+    std::cout << "||  Взети изпити: " << successfulExams << " 🎓    ||" << std::endl;
     std::cout << "||==========================================||" << std::endl;
 }
 
@@ -171,7 +190,7 @@ void menu(const int n) {
             break;
         case 5: work();
             break;
-        case 6: if (day == 8 || day == 17 || day == 26 || day == 45) {
+        case 6: if (day == 8 || day == 17 || day == 26 || day == exam4Day || day == 45) {
                 goToExam();
             }
             break;
@@ -204,8 +223,8 @@ void saveGame() {
         std::cout << "Играта не успя да се запази";
         return;
     }
-    int stats[] = {money, energy, psychics, knowledge, examCount, day};
-    for (int i = 0; i < 6; i++) {
+    int stats[] = {money, energy, psychics, knowledge, successfulExams, day};
+    for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
         out << stats[i] << " ";
     }
     out << std::endl;
@@ -218,15 +237,15 @@ bool loadGame() {
         std::cout << "Файлът не успя да се отвори";
         return false;
     }
-    int stats[] = {money, energy, psychics, knowledge, examCount, day};
-    for (int i = 0; i < 6; i++) {
+    int stats[] = {money, energy, psychics, knowledge, successfulExams, day};
+    for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
         in >> stats[i];
     }
     money = stats[0];
     energy = stats[1];
     psychics = stats[2];
     knowledge = stats[3];
-    examCount = stats[4];
+    successfulExams = stats[4];
     day = stats[5];
     in.close();
     printStudentStatus();
@@ -275,6 +294,7 @@ int main() {
         printMenu();
         int menuOption;
         //============CHOOSE_WHAT_TO_DO_TODAY============
+    backFromOption6:
         do {
             std::cout << "Избери опция 1 или 2 или 3 или 4 или 5 или 6 или 7:";
             std::cin >> menuOption;
@@ -292,13 +312,17 @@ int main() {
         menu(menuOption);
         printStudentStatus();
         saveGame();
-
+        if (menuOption == 7 && day != 8 && day != 17 && day != 26 && day != exam4Day && day != 45) {
+            std::cout << "Не е денят за изпит. Взможните дни за изпит са 8-ия, 17-ия, 26-ия " << exam4Day <<
+                    "-ия и 45-ия";
+            goto backFromOption6;
+        }
         //======LOST_GAME
         if (money <= 0 || psychics <= 0) {
             printLostGame();
             break;
         }
-        if (day == 45 && examCount < 5) {
+        if (day == 45 && successfulExams < 5) {
             printLostGame();
             break;
         }
@@ -308,7 +332,7 @@ int main() {
             break;
         }
         //WIN_GAME
-        if (examCount == 5) {
+        if (successfulExams == 5) {
             printWinGame();
             break;
         }
