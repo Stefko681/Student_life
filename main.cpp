@@ -1,7 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
-int const MAX_PARAMETER_VALUE = 100;
+//========CONSTANTS=============
+const int MAX_PARAMETER_VALUE = 100;
+const char *SAVE_FILE = "game.txt";
+//========PARAMETERS==============
 int money, energy, psychics, knowledge, examCount = 0, day = 1;
 
 void parameterRestrictions() {
@@ -12,15 +15,15 @@ void parameterRestrictions() {
         psychics = MAX_PARAMETER_VALUE;
     }
     if (knowledge > MAX_PARAMETER_VALUE) {
-        knowledge = MAX_PARAMETER_VALUE ;
+        knowledge = MAX_PARAMETER_VALUE;
     }
-    if (energy<0) {
+    if (energy < 0) {
         day++;
-        std::cout<<"Припадна, защото енергията ти е по-малка от 0";
+        std::cout << "Припадна, защото енергията ти е по-малка от 0";
     }
-
 }
 
+//======CHANGE_STATS============
 void goToLessons() {
     knowledge += 20;
     energy -= 20;
@@ -82,15 +85,6 @@ void printBeginGame() {
     std::cout << "||======================================||" << std::endl;
 }
 
-void beginGame(int n) {
-    if (n == 1) {
-        std::ofstream game("game.txt");
-        game.close();
-    }
-    if (n == 2) {
-        std::ifstream game("game.txt");
-    }
-}
 
 void printDifficultyLevel() {
     std::cout << "||======================================||" << std::endl;
@@ -132,6 +126,7 @@ void printStudentStatus() {
     std::cout << "||  Взети изпити: " << examCount << " 🎓    ||" << std::endl;
     std::cout << "||==========================================||" << std::endl;
 }
+
 
 void printMenu() {
     std::cout << "Какво искаш да направиш днес?" << std::endl;
@@ -203,7 +198,52 @@ void printLostGame() {
 }
 
 
+void saveGame() {
+    std::ofstream out(SAVE_FILE);
+    if (!out) {
+        std::cout << "Играта не успя да се запази";
+        return;
+    }
+    int stats[] = {money, energy, psychics, knowledge, examCount, day};
+    for (int i = 0; i < 6; i++) {
+        out << stats[i] << " ";
+    }
+    out << std::endl;
+    out.close();
+}
+
+bool loadGame() {
+    std::ifstream in(SAVE_FILE);
+    if (!in) {
+        std::cout << "Файлът не успя да се отвори";
+        return false;
+    }
+    int stats[] = {money, energy, psychics, knowledge, examCount, day};
+    for (int i = 0; i < 6; i++) {
+        in >> stats[i];
+    }
+    money = stats[0];
+    energy = stats[1];
+    psychics = stats[2];
+    knowledge = stats[3];
+    examCount = stats[4];
+    day = stats[5];
+    in.close();
+    printStudentStatus();
+    return true;
+}
+
+void beginGame(const int n) {
+    if (n == 1) {
+        saveGame();
+    }
+    if (n == 2) {
+        loadGame();
+    }
+}
+
 int main() {
+    //==========CHOOSE_GAME_START_OPTION
     printBeginGame();
     int beginGameOption;
     do {
@@ -214,8 +254,9 @@ int main() {
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             continue;
         }
-    } while (beginGameOption != 1 && beginGameOption != 2); //choose game start option
+    } while (beginGameOption != 1 && beginGameOption != 2);
     beginGame(beginGameOption);
+    //=========CHOOSE_DIFFICULTY_LEVEL===========
     if (beginGameOption == 1) {
         printDifficultyLevel();
         int DifficultyLevelOption;
@@ -228,37 +269,49 @@ int main() {
                 continue;
             }
         } while (DifficultyLevelOption != 1 && DifficultyLevelOption != 2 && DifficultyLevelOption != 3);
-        difficultyLevel(DifficultyLevelOption); //choose difficulty level
-    }
+        difficultyLevel(DifficultyLevelOption);
+    } //=========LOOP_TO_THE_LAST_DAY==========
     while (day <= 45) {
         printMenu();
-        int menuOptions;
+        int menuOption;
+        //============CHOOSE_WHAT_TO_DO_TODAY============
         do {
-            std::cout << "Избери опция 1 или 2 или 3 или 4 или 5 или 6 или 7";
-            std::cin >> menuOptions;
+            std::cout << "Избери опция 1 или 2 или 3 или 4 или 5 или 6 или 7:";
+            std::cin >> menuOption;
             if (std::cin.fail()) {
                 std::cin.clear();
                 std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
                 continue;
             }
-        } while (menuOptions != 1 && menuOptions != 2 && menuOptions != 3 && menuOptions != 4 && menuOptions != 5 &&
-                 menuOptions != 6 && menuOptions != 7);
-        menu(menuOptions); //choose what to do today
+        } while (menuOption != 1 && menuOption != 2 && menuOption != 3 && menuOption != 4 && menuOption != 5 &&
+                 menuOption != 6 && menuOption != 7);
+        //======EXIT_FROM_THE_GAME=========
+        if (menuOption == 7) {
+            break;
+        }
+        menu(menuOption);
         printStudentStatus();
-        day++;
+        saveGame();
+
+        //======LOST_GAME
         if (money <= 0 || psychics <= 0) {
-            printLostGame();
-        }
-        if (examCount == 5) {
-            printWinGame();
-        }
-        if (day == 45 && examCount < 5) {
-            printLostGame();
-        }
-        if (money<0) {
-            std::cout<<"Парите ти са по-малко от 0.";
             printLostGame();
             break;
         }
+        if (day == 45 && examCount < 5) {
+            printLostGame();
+            break;
+        }
+        if (money < 0) {
+            std::cout << "Парите ти са по-малко от 0.";
+            printLostGame();
+            break;
+        }
+        //WIN_GAME
+        if (examCount == 5) {
+            printWinGame();
+            break;
+        }
+        day++;
     }
 }
