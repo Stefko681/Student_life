@@ -5,7 +5,7 @@
 
 //========CONSTANTS=============
 const int MAX_PARAMETER_VALUE = 100;
-const int STUDENT_PARAMETERS_COUNT = 6;
+const int STUDENT_PARAMETERS_COUNT = 7;
 const int EXAM_1_DAY = 8;
 const int EXAM_2_DAY = 17;
 const int EXAM_3_DAY = 26;
@@ -24,7 +24,7 @@ int randomNumber(const int min, const int max) {
 
 //========PARAMETERS==============
 double money, energy, psychics, knowledge, successfulExams = 0, day = 1, examNumber = 1,
-        exam4Day = randomNumber(27, 45);
+        exam4Day = randomNumber(27, 45), failedExams = 0;
 
 
 void parameterRestrictions() {
@@ -37,11 +37,14 @@ void parameterRestrictions() {
     if (knowledge > MAX_PARAMETER_VALUE) {
         knowledge = MAX_PARAMETER_VALUE;
     }
-    if (energy < 0) {
-        std::cout << "Припадна и изпускаш следващия ден, защото енергията ти е по-малка от 0";
-    }
 }
 
+
+void energyLessThanZero() {
+    std::cout << "Припадна и изпускаш следващия ден, защото енергията ти е по-малка от 0" << std::endl;
+    day++;
+    energy = 40;
+}
 
 //======RANDOM_EVENT_FOR_EVERY_MAIN_EVENT=====
 void studyRandomEvents() {
@@ -171,6 +174,7 @@ void eat() {
     energy += 20;
     money -= 10;
     psychics += 5;
+    std::cout << "Днес избра да се нахраниш. Резултатът е +20 енергия, -10 пари и +5 психика." << std::endl;
     int randomNum = randomNumber(1, 100);
     if (energy < 40 && randomNum > 50) {
         energy -= 10;
@@ -188,6 +192,7 @@ void goOut() {
     psychics += 40;
     money -= 25;
     energy -= 15;
+    std::cout << "Днес избра да излезеш. Резултатът е -15 енергия, -25 парии +40 психика." << std::endl;
     int randomNum = randomNumber(1, 100);
     if (energy < 40 && randomNum > 50) {
         psychics -= 20;
@@ -203,12 +208,14 @@ void sleep() {
     energy += 50;
     psychics += 10;
     parameterRestrictions();
+    std::cout << "Днес избра да се наспиш. Резултатът е +50 енергия и +10 психика." << std::endl;
 }
 
 void work() {
     money += 40;
     energy -= 20;
     psychics -= 10;
+    std::cout << "Днес избра да отидеш на работа. Резултатът е -20 енергия, +40 пари и -20 психика." << std::endl;
     int randomNum = randomNumber(1, 100);
     if (energy < 40 && randomNum > 50) {
         money -= 20;
@@ -232,6 +239,7 @@ void goToExam() {
     } else {
         psychics -= 30;
         std::cout << "За жалост не успя да си вземеш изпита." << std::endl;
+        failedExams++;
     }
     examNumber++;
     int randomNum = randomNumber(1, 100);
@@ -296,6 +304,9 @@ void printStudentStatus() {
     std::cout << "||  Психика: " << psychics << " 🧠          ||" << std::endl;
     std::cout << "||  Знания: " << knowledge << " 📔          ||" << std::endl;
     std::cout << "||  Взети изпити: " << successfulExams << " 🎓    ||" << std::endl;
+    if (failedExams != 0) {
+        std::cout << "||  Невзети изпити: " << failedExams << " ❌    ||" << std::endl;
+    }
     std::cout << "||==========================================||" << std::endl;
 }
 
@@ -309,6 +320,9 @@ void printMenu() {
     std::cout << "[5] Работиш" << std::endl;
     std::cout << "[6] Явяваш се на изпит (ако е време)" << std::endl;
     std::cout << "[7] Излез от играта" << std::endl;
+    if (failedExams != 0) {
+        std::cout << "[8] Яви се на поправка: " << failedExams << " ❌    ||" << std::endl;
+    }
 }
 
 
@@ -335,8 +349,6 @@ void studyOptions(const int n) {
 
 void menu(const int n) {
     switch (n) {
-        case 1: goToLessons();
-            break;
         case 2: eat();
             break;
         case 3: goOut();
@@ -350,7 +362,10 @@ void menu(const int n) {
                 goToExam();
             }
             break;
-        case 7:
+        case 7: break;
+        case 8: if (failedExams != 0) {
+                goToExam();
+            }
         default: return;
     }
 }
@@ -374,18 +389,25 @@ void printLostGame() {
 }
 
 
+void printExamDays() {
+    std::cout << "❗❗❗Внимание! Дните са изпити са:" << EXAM_1_DAY << "-ия, " << EXAM_2_DAY << "-ия, " << EXAM_3_DAY <<
+            "-ия, " <<
+            exam4Day << "-ия и " << EXAM_5_DAY << "-ия❗❗❗" << std::endl;
+}
+
 void saveGame() {
     std::ofstream out(SAVE_FILE);
     if (!out) {
         std::cout << "Играта не успя да се запази.";
         return;
     }
-    double stats[] = {money, energy, psychics, knowledge, successfulExams, day};
+    double stats[] = {money, energy, psychics, knowledge, successfulExams, day, failedExams};
     for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
         out << stats[i] << " ";
     }
     out << std::endl;
     out.close();
+    std::cout << "Успешно запзаи играта." << std::endl;
 }
 
 
@@ -395,7 +417,7 @@ bool loadGame() {
         std::cout << "Файлът не успя да се отвори.";
         return false;
     }
-    double stats[] = {money, energy, psychics, knowledge, successfulExams, day};
+    double stats[] = {money, energy, psychics, knowledge, successfulExams, day, failedExams};
     for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
         in >> stats[i];
     }
@@ -405,8 +427,8 @@ bool loadGame() {
     knowledge = stats[3];
     successfulExams = stats[4];
     day = stats[5];
+    failedExams = stats[6];
     in.close();
-    printStudentStatus();
     return true;
 }
 
@@ -500,12 +522,14 @@ int main() {
 
     //=========LOOP_TO_THE_LAST_DAY==========
     while (day <= 45) {
-        randomDayEvents();
-        printStudentStatus();
-
-
         //============CHOOSE_WHAT_TO_DO_TODAY============
     backFromOption6:
+        if (energy < 0) {
+            energyLessThanZero();
+        }
+        printStudentStatus();
+        randomDayEvents();
+        printExamDays();
         if (day == EXAM_1_DAY || day == EXAM_2_DAY || day == EXAM_3_DAY || day == exam4Day || day == EXAM_5_DAY) {
             std::cout << "Днес е ден за изпит. Отиваш автоматично!" << std::endl;
             goToExam();
@@ -515,26 +539,44 @@ int main() {
 
         printMenu();
         int menuOption;
+        int studyOption;
         do {
-            std::cout << "Избери опция 1 или 2 или 3 или 4 или 5 или 6 или 7:";
+            std::cout << "Избери опция 1 или 2 или 3 или 4 или 5 или 6 или 7 или 8(ако имаш невзет изпит):";
             std::cin >> menuOption;
             if (std::cin.fail()) {
                 std::cin.clear();
                 std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout << "Моля избери валидна опция." << std::endl;
                 continue;
             }
         } while (menuOption != 1 && menuOption != 2 && menuOption != 3 && menuOption != 4 && menuOption != 5 &&
-                 menuOption != 6 && menuOption != 7);
+                 menuOption != 6 && menuOption != 7 && menuOption != 8);
+
+
+        //============STUDY_OPTION_CHOOSE=======
+        if (menuOption == 1) {
+            printStudyOptions();
+            do {
+                std::cout << "Избери опция 1 или 2 или 3:";
+                std::cin >> studyOption;
+                if (std::cin.fail()) {
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    continue;
+                }
+            } while (studyOption != 1 && studyOption != 2 && studyOption != 3);
+            studyOptions(studyOption);
+        }
 
 
         //======EXIT_FROM_THE_GAME=========
         if (menuOption == 7) {
+            saveGame();
             break;
         }
 
 
         menu(menuOption);
-        saveGame();
 
 
         if (menuOption == 6 && day != EXAM_1_DAY && day != EXAM_2_DAY && day != EXAM_3_DAY && day != exam4Day && day !=
@@ -546,18 +588,20 @@ int main() {
 
 
         //======LOST_GAME
-        if (money <= 0 || psychics <= 0) {
+        if (psychics < 0) {
+            std::cout << "Психиката ти e по-малка от 0." << std::endl;
             printLostGame();
             break;
         }
 
         if (day == 45 && successfulExams < 5) {
+            std::cout << "Мина 45-тия ден, а не си си взел изпитите." << std::endl;
             printLostGame();
             break;
         }
 
         if (money < 0) {
-            std::cout << "Парите ти са по-малко от 0.";
+            std::cout << "Парите ти са по-малко от 0." << std::endl;
             printLostGame();
             break;
         }
