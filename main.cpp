@@ -1,3 +1,19 @@
+/**
+*
+* Solution to course project # 11
+* Introduction to programming course
+* Faculty of Mathematics and Informatics of Sofia University
+* Winter semester 2025/2026
+*
+* @author Stefko Nikolaev
+* @idnumber 6MI0600647*
+* @compiler GCC
+*
+* <main file>
+*
+*/
+
+
 #include <iostream>
 #include <fstream>
 #include <limits>
@@ -13,358 +29,370 @@ const int EXAM_5_DAY = 45;
 const char *SAVE_FILE = "game.txt";
 
 
+struct GameState {
+    double money;
+    double energy;
+    double psychics;
+    double knowledge;
+    double successfulExams;
+    double day;
+    double examNumber;
+    double failedExams;
+    double exam4Day;
+};
+
 //=========RANDOM_GENERATOR==============
-std::mt19937 randomGenerator(std::random_device{}());
 
-int randomNumber(const int min, const int max) {
+int randomNumber(std::mt19937 &gen, const int min, const int max) {
     std::uniform_int_distribution<int> range(min, max);
-    return range(randomGenerator);
+    return range(gen);
 }
 
 
-//========PARAMETERS==============
-double money, energy, psychics, knowledge, successfulExams = 0, day = 1, examNumber = 1,
-        exam4Day = randomNumber(27, 45), failedExams = 0;
-
-
-void parameterRestrictions() {
-    if (energy > MAX_PARAMETER_VALUE) {
-        energy = MAX_PARAMETER_VALUE;
+void parameterRestrictions(GameState &state) {
+    if (state.energy > MAX_PARAMETER_VALUE) {
+        state.energy = MAX_PARAMETER_VALUE;
     }
-    if (psychics > MAX_PARAMETER_VALUE) {
-        psychics = MAX_PARAMETER_VALUE;
+    if (state.psychics > MAX_PARAMETER_VALUE) {
+        state.psychics = MAX_PARAMETER_VALUE;
     }
-    if (knowledge > MAX_PARAMETER_VALUE) {
-        knowledge = MAX_PARAMETER_VALUE;
+    if (state.knowledge > MAX_PARAMETER_VALUE) {
+        state.knowledge = MAX_PARAMETER_VALUE;
     }
 }
 
 
-void energyLessThanZero() {
-    std::cout << "Припадна и изпускаш следващия ден, защото енергията ти е по-малка от 0" << std::endl;
-    day++;
-    energy = 40;
+void energyLessThanZero(GameState &state) {
+    std::cout << "You passed out! Energy < 0. You miss the next day." << std::endl;
+    state.day++;
+    state.energy = 40;
+}
+
+
+void tooLowEnergyMessage() {
+    std::cout << "Your energy is low and unfortunately the effectiveness of half of the action is activated!" <<
+            std::endl;
 }
 
 //======RANDOM_EVENT_FOR_EVERY_MAIN_EVENT=====
-void studyRandomEvents() {
-    int rand = randomNumber(1, 100);
+void studyRandomEvents(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 100);
     if (rand <= 5) {
-        knowledge += 15;
-        std::cout << "Изведнъж всичко ти стана ясно! Материалът е елементарен. +15 знания!" << std::endl;
+        state.knowledge += 15;
+        std::cout << "Everything became clear! +15 Knowledge!" << std::endl;
     } else if (rand <= 15) {
-        knowledge += 5;
-        psychics += 5;
-        std::cout << "Колега ти праща снимани лекциите, които ти липсват. +5 знания и +5 психика!" << std::endl;
+        state.knowledge += 5;
+        state.psychics += 5;
+        std::cout << "A colleague sent you notes. +5 Knowledge, +5 Psychics!" << std::endl;
     } else if (rand <= 27) {
-        energy -= 10;
-        std::cout << "Прекали с четенето, очите те болят. -10 енегрия!" << std::endl;
+        state.energy -= 10;
+        std::cout << "You studied too much, your eyes hurt. -10 Energy!" << std::endl;
     } else if (rand <= 34) {
-        psychics -= 15;
-        std::cout << "Някой пробива с бормашина точно докато учиш. -15 психика!" << std::endl;
+        state.psychics -= 15;
+        std::cout << "Neighbors are drilling while you study. -15 Psychics!" << std::endl;
     }
 }
 
-void workRandomEvents() {
-    int rand = randomNumber(1, 100);
+void workRandomEvents(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 100);
     if (rand <= 10) {
-        money += 15;
-        std::cout << "Клиентът беше много доволен. +15 пари!" << std::endl;
+        state.money += 15;
+        std::cout << "The client was happy. +15 Money!" << std::endl;
     } else if (rand <= 12) {
-        money += 20;
-        std::cout << "Докато отиваше на работа, видя 20 лв. на тротоара. +20 пари!" << std::endl;
+        state.money += 20;
+        std::cout << "You found 20 BGN on the street. +20 Money!" << std::endl;
     } else if (rand <= 17) {
-        money -= 15;
-        std::cout << "Счупи нещо или сбърка поръчка. Удържат ти от заплатата. -15 пари!" << std::endl;
+        state.money -= 15;
+        std::cout << "You broke something at work. -15 Money!" << std::endl;
     } else if (rand <= 27) {
-        energy -= 15;
-        std::cout << "Наложи се да останеш 1 час повече. -15 енергия!" << std::endl;
+        state.energy -= 15;
+        std::cout << "Overtime work. -15 Energy!" << std::endl;
     }
 }
 
-void goOutRandomEvents() {
-    int rand = randomNumber(1, 100);
+void goOutRandomEvents(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 100);
     if (rand <= 4) {
-        money += 15;
-        std::cout << "КНякой непознат плати сметката на масата. +15 пари!" << std::endl;
+        state.money += 15;
+        std::cout << "A stranger paid the bill. +15 Money!" << std::endl;
     } else if (rand <= 9) {
-        psychics += 30;
-        std::cout << "Запозна се с някой много специален/на. +30 психика!" << std::endl;
+        state.psychics += 30;
+        std::cout << "You met someone special. +30 Psychics!" << std::endl;
     } else if (rand <= 11) {
-        money -= 40;
-        std::cout << "Прибираш се и осъзнаваш, че портфейлът го няма. -40 пари!" << std::endl;
+        state.money -= 40;
+        std::cout << "You lost your wallet. -40 Money!" << std::endl;
     } else if (rand <= 32) {
-        energy -= 20;
-        std::cout << "Беше твърде диво. На сутринта си парцал. -20 енергия!" << std::endl;
+        state.energy -= 20;
+        std::cout << "Wild party. -20 Energy!" << std::endl;
     }
 }
 
-void eatRandomEvents() {
-    int rand = randomNumber(1, 100);
+void eatRandomEvents(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 100);
     if (rand <= 10) {
-        psychics += 5;
-        std::cout << "КПромоция в стола/дюнера. +5 психика!" << std::endl;
+        state.psychics += 5;
+        std::cout << "Promotion at the duner shop. +5 Psychics!" << std::endl;
     } else if (rand <= 15) {
-        energy -= 20;
-        std::cout << "Нещо му имаше на този дюнер... -20 енергия!" << std::endl;
+        state.energy -= 20;
+        std::cout << "Bad food poisoning... -20 Energy!" << std::endl;
     }
 }
 
-void sleepRandomEvents() {
-    int rand = randomNumber(1, 100);
+void sleepRandomEvents(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 100);
     if (rand <= 7) {
-        psychics -= 10;
-        std::cout << "Сънува, че отиваш гол на изпит. -10 психика   !" << std::endl;
+        state.psychics -= 10;
+        std::cout << "Nightmare about exams. -10 Psychics!" << std::endl;
     } else if (rand <= 17) {
-        energy -= 25;
-        std::cout << "Купон в съседната стая до 3 сутринта. -25 енергия!" << std::endl;
+        state.energy -= 25;
+        std::cout << "Party next door until 3 AM. -25 Energy!" << std::endl;
     }
 }
 
 
 //======CHANGE_STATS============
-void goToLessons() {
-    knowledge += 20;
-    energy -= 20;
-    psychics -= 10;
-    int randomNum = randomNumber(1, 100);
-    if (energy < 40 && randomNum > 50) {
-        knowledge -= 10;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
-    } else if (energy < 80 && randomNum > 75) {
-        knowledge -= 10;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
+void goToLessons(std::mt19937 &gen, GameState &state) {
+    state.knowledge += 20;
+    state.energy -= 20;
+    state.psychics -= 10;
+    int randomNum = randomNumber(gen, 1, 100);
+    if (state.energy < 40 && randomNum > 50) {
+        state.knowledge -= 10;
+        tooLowEnergyMessage();
+    } else if (state.energy < 80 && randomNum > 75) {
+        state.knowledge -= 10;
+        tooLowEnergyMessage();
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void studyHome() {
-    knowledge += 20;
-    energy -= 15;
-    psychics -= 20;
-    int randomNum = randomNumber(1, 100);
-    if (energy < 40 && randomNum > 50) {
-        knowledge -= 10;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
-    } else if (energy < 80 && randomNum > 75) {
-        knowledge -= 10;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
+void studyHome(std::mt19937 &gen, GameState &state) {
+    state.knowledge += 20;
+    state.energy -= 15;
+    state.psychics -= 20;
+    int randomNum = randomNumber(gen, 1, 100);
+    if (state.energy < 40 && randomNum > 50) {
+        state.knowledge -= 10;
+        tooLowEnergyMessage();
+    } else if (state.energy < 80 && randomNum > 75) {
+        state.knowledge -= 10;
+        tooLowEnergyMessage();
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void studyWithFriends() {
-    knowledge += 5;
-    energy -= 10;
-    psychics += 10;
-    int randomNum = randomNumber(1, 100);
-    if (energy < 40 && randomNum > 50) {
-        knowledge -= 2.5;
-        psychics -= 5;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
-    } else if (energy < 80 && randomNum > 75) {
-        knowledge -= 2.5;
-        psychics -= 5;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
+void studyWithFriends(std::mt19937 &gen, GameState &state) {
+    state.knowledge += 5;
+    state.energy -= 10;
+    state.psychics += 10;
+    int randomNum = randomNumber(gen, 1, 100);
+    if (state.energy < 40 && randomNum > 50) {
+        state.knowledge -= 2.5;
+        state.psychics -= 5;
+        tooLowEnergyMessage();
+    } else if (state.energy < 80 && randomNum > 75) {
+        state.knowledge -= 2.5;
+        state.psychics -= 5;
+        tooLowEnergyMessage();
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void eat() {
-    energy += 20;
-    money -= 10;
-    psychics += 5;
-    std::cout << "Днес избра да се нахраниш. Резултатът е +20 енергия, -10 пари и +5 психика." << std::endl;
-    int randomNum = randomNumber(1, 100);
-    if (energy < 40 && randomNum > 50) {
-        energy -= 10;
-        psychics -= 2.5;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
-    } else if (energy < 80 && randomNum > 75) {
-        energy -= 10;
-        psychics -= 2.5;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
+void eat(std::mt19937 &gen, GameState &state) {
+    state.energy += 20;
+    state.money -= 10;
+    state.psychics += 5;
+    std::cout << "You ate something. +20 Energy, -10 Money, +5 Psychics." << std::endl;
+    int randomNum = randomNumber(gen, 1, 100);
+    if (state.energy < 40 && randomNum > 50) {
+        state.energy -= 10;
+        state.psychics -= 2.5;
+        tooLowEnergyMessage();
+    } else if (state.energy < 80 && randomNum > 75) {
+        state.energy -= 10;
+        state.psychics -= 2.5;
+        tooLowEnergyMessage();
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void goOut() {
-    psychics += 40;
-    money -= 25;
-    energy -= 15;
-    std::cout << "Днес избра да излезеш. Резултатът е -15 енергия, -25 парии +40 психика." << std::endl;
-    int randomNum = randomNumber(1, 100);
-    if (energy < 40 && randomNum > 50) {
-        psychics -= 20;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
-    } else if (energy < 80 && randomNum > 75) {
-        psychics -= 20;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
+void goOut(std::mt19937 &gen, GameState &state) {
+    state.psychics += 40;
+    state.money -= 25;
+    state.energy -= 15;
+    std::cout << "You went out. -15 Energy, -25 Money, +40 Psychics." << std::endl;
+    int randomNum = randomNumber(gen, 1, 100);
+    if (state.energy < 40 && randomNum > 50) {
+        state.psychics -= 20;
+        tooLowEnergyMessage();
+    } else if (state.energy < 80 && randomNum > 75) {
+        state.psychics -= 20;
+        tooLowEnergyMessage();
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void sleep() {
-    energy += 50;
-    psychics += 10;
-    parameterRestrictions();
-    std::cout << "Днес избра да се наспиш. Резултатът е +50 енергия и +10 психика." << std::endl;
+void sleep(std::mt19937 &gen, GameState &state) {
+    state.energy += 50;
+    state.psychics += 10;
+    parameterRestrictions(state);
+    std::cout << "You slept well. +50 Energy, +10 Psychics." << std::endl;
 }
 
-void work() {
-    money += 40;
-    energy -= 20;
-    psychics -= 10;
-    std::cout << "Днес избра да отидеш на работа. Резултатът е -20 енергия, +40 пари и -20 психика." << std::endl;
-    int randomNum = randomNumber(1, 100);
-    if (energy < 40 && randomNum > 50) {
-        money -= 20;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
-    } else if (energy < 80 && randomNum > 75) {
-        money -= 20;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
+void work(std::mt19937 &gen, GameState &state) {
+    state.money += 40;
+    state.energy -= 20;
+    state.psychics -= 10;
+    std::cout << "You went to work. -20 Energy, +40 Money, -20 Psychics." << std::endl;
+    int randomNum = randomNumber(gen, 1, 100);
+    if (state.energy < 40 && randomNum > 50) {
+        state.money -= 20;
+        tooLowEnergyMessage();
+    } else if (state.energy < 80 && randomNum > 75) {
+        state.money -= 20;
+        tooLowEnergyMessage();
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void goToExam() {
-    energy -= 20;
-    int luck = randomNumber(1, 100);
-    double penalty = (examNumber - 1) * 5;
-    double success = (knowledge * 0.75) + (psychics * 0.1) + (energy * 0.1) + (luck * 0.2) - penalty;
+void goToExam(std::mt19937 &gen, GameState &state) {
+    state.energy -= 20;
+    int luck = randomNumber(gen, 1, 100);
+    double penalty = (state.examNumber - 1) * 5;
+    double success = (state.knowledge * 0.75) + (state.psychics * 0.1) + (state.energy * 0.1) + (luck * 0.2) - penalty;
     if (success >= 75.0) {
-        successfulExams++;
-        psychics += 20;
-        std::cout << "Поздравления, успешно си взе изпита!" << std::endl;
+        state.successfulExams++;
+        state.psychics += 20;
+        std::cout << "Congratulations! You passed the exam!" << std::endl;
     } else {
-        psychics -= 30;
-        std::cout << "За жалост не успя да си вземеш изпита." << std::endl;
-        failedExams++;
+        state.psychics -= 30;
+        std::cout << "Unfortunately, you failed the exam." << std::endl;
+        state.failedExams++;
     }
-    examNumber++;
-    int randomNum = randomNumber(1, 100);
-    if (energy < 40 && randomNum > 50) {
-        psychics -= 10;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
-    } else if (energy < 80 && randomNum > 75) {
-        psychics -= 10;
-        std::cout << "Енергията ти е ниска и за жалост се активира ефективност на половина от действието!" << std::endl;
+    state.examNumber++;
+    int randomNum = randomNumber(gen, 1, 100);
+    if (state.energy < 40 && randomNum > 50) {
+        state.psychics -= 10;
+        tooLowEnergyMessage();
+    } else if (state.energy < 80 && randomNum > 75) {
+        state.psychics -= 10;
+        tooLowEnergyMessage();
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
 
 void printBeginGame() {
     std::cout << "||======================================||" << std::endl;
-    std::cout << "||  🎓  ПОЗДРАВЛЕНИЯ!                   ||" << std::endl;
-    std::cout << "||  [1] Започване на нова игра          ||" << std::endl;
-    std::cout << "||  [2] Зареждане на игра от файл       ||" << std::endl;
+    std::cout << "||  WELCOME TO STUDENT SIMULATOR        ||" << std::endl;
+    std::cout << "||  [1] New Game                        ||" << std::endl;
+    std::cout << "||  [2] Load Game                       ||" << std::endl;
     std::cout << "||======================================||" << std::endl;
 }
 
 
 void printDifficultyLevel() {
     std::cout << "||======================================||" << std::endl;
-    std::cout << "||  Избери начално ниво                 ||" << std::endl;
-    std::cout << "||  [1] Лесно                           ||" << std::endl;
-    std::cout << "||  [2] Нормално                        ||" << std::endl;
-    std::cout << "||  [3] Трудно                          ||" << std::endl;
+    std::cout << "||  Choose difficulty level             ||" << std::endl;
+    std::cout << "||  [1] Easy                            ||" << std::endl;
+    std::cout << "||  [2] Normal                          ||" << std::endl;
+    std::cout << "||  [3] Hard                            ||" << std::endl;
     std::cout << "||======================================||" << std::endl;
 }
 
 
-void difficultyLevel(const int n) {
+void difficultyLevel(GameState &state, const int n) {
     if (n == 1) {
-        knowledge = 80;
-        energy = 100;
-        money = 100;
-        psychics = 100;
+        state.knowledge = 80;
+        state.energy = 100;
+        state.money = 100;
+        state.psychics = 100;
     }
     if (n == 2) {
-        knowledge = 50;
-        energy = 80;
-        money = 80;
-        psychics = 80;
+        state.knowledge = 50;
+        state.energy = 80;
+        state.money = 80;
+        state.psychics = 80;
     }
     if (n == 3) {
-        knowledge = 35;
-        money = 60;
-        energy = 60;
-        psychics = 40;
+        state.knowledge = 35;
+        state.money = 60;
+        state.energy = 60;
+        state.psychics = 40;
     }
 }
 
 
-void printStudentStatus() {
-    std::cout << std::endl;
-    std::cout << "||==========================================||" << std::endl;
-    std::cout << "||  Ден: " << day << " от 45                ||" << std::endl;
-    std::cout << "||  Пари: " << money << " лв                ||" << std::endl;
-    std::cout << "||  Енергия: " << energy << " 🔋            ||" << std::endl;
-    std::cout << "||  Психика: " << psychics << " 🧠          ||" << std::endl;
-    std::cout << "||  Знания: " << knowledge << " 📔          ||" << std::endl;
-    std::cout << "||  Взети изпити: " << successfulExams << " 🎓    ||" << std::endl;
-    if (failedExams != 0) {
-        std::cout << "||  Невзети изпити: " << failedExams << " ❌    ||" << std::endl;
+void printStudentStatus(const GameState &state) {
+    std::cout << "\n||==========================================||" << std::endl;
+    std::cout << "||  Day: " << state.day << " of 45                  ||" << std::endl;
+    std::cout << "||  Money: " << state.money << " BGN                ||" << std::endl;
+    std::cout << "||  Energy: " << state.energy << "                  ||" << std::endl;
+    std::cout << "||  Psychics: " << state.psychics << "                ||" << std::endl;
+    std::cout << "||  Knowledge: " << state.knowledge << "            ||" << std::endl;
+    std::cout << "||  Passed Exams: " << state.successfulExams << "   ||" << std::endl;
+    if (state.failedExams != 0) {
+        std::cout << "||  Failed Exams: " << state.failedExams << "   ||" << std::endl;
     }
     std::cout << "||==========================================||" << std::endl;
 }
 
 
-void printMenu() {
-    std::cout << "Какво искаш да направиш днес?" << std::endl;
-    std::cout << "[1] Учиш" << std::endl;
-    std::cout << "[2] Храниш се" << std::endl;
-    std::cout << "[3] Излизаш" << std::endl;
-    std::cout << "[4] Почиваш" << std::endl;
-    std::cout << "[5] Работиш" << std::endl;
-    std::cout << "[6] Явяваш се на изпит (ако е време)" << std::endl;
-    std::cout << "[7] Излез от играта" << std::endl;
-    if (failedExams != 0) {
-        std::cout << "[8] Яви се на поправка: " << failedExams << " ❌    ||" << std::endl;
+void printMenu(const GameState &state) {
+    std::cout << "What do you want to do today?" << std::endl;
+    std::cout << "[1] Study" << std::endl;
+    std::cout << "[2] Eat" << std::endl;
+    std::cout << "[3] Go Out" << std::endl;
+    std::cout << "[4] Sleep" << std::endl;
+    std::cout << "[5] Work" << std::endl;
+    std::cout << "[6] Take Exam (if it is time)" << std::endl;
+    std::cout << "[7] Save & Exit" << std::endl;
+    if (state.failedExams != 0) {
+        std::cout << "[8] Retake Exam (Penalty): " << state.failedExams << " ||" << std::endl;
     }
 }
 
 
 void printStudyOptions() {
-    std::cout << "Избери тип учене?" << std::endl;
-    std::cout << "[1] Ходене на лекции" << std::endl;
-    std::cout << "[2] Учене вкъщи" << std::endl;
-    std::cout << "[3] Учене с приятели" << std::endl;
+    std::cout << "Choose study type:" << std::endl;
+    std::cout << "[1] Go to lectures" << std::endl;
+    std::cout << "[2] Study at home" << std::endl;
+    std::cout << "[3] Study with friends" << std::endl;
 }
 
 
-void studyOptions(const int n) {
+void studyOptions(std::mt19937 &gen, GameState &state, const int n) {
     if (n == 1) {
-        goToLessons();
+        goToLessons(gen, state);
     }
     if (n == 2) {
-        studyHome();
+        studyHome(gen, state);
     }
     if (n == 3) {
-        studyWithFriends();
+        studyWithFriends(gen, state);
     }
 }
 
 
-void menu(const int n) {
+void menu(std::mt19937 &gen, GameState &state, const int n) {
     switch (n) {
-        case 2: eat();
+        case 2: eat(gen, state);
             break;
-        case 3: goOut();
+        case 3: goOut(gen, state);
             break;
-        case 4: sleep();
+        case 4: sleep(gen, state);
             break;
-        case 5: work();
+        case 5: work(gen, state);
             break;
-        case 6: if (day == EXAM_1_DAY || day == EXAM_2_DAY || day == EXAM_3_DAY || day == exam4Day || day ==
+        case 6: if (state.day == EXAM_1_DAY || state.day == EXAM_2_DAY || state.day == EXAM_3_DAY || state.day == state.
+                    exam4Day || state.day ==
                     EXAM_5_DAY) {
-                goToExam();
+                goToExam(gen, state);
             }
             break;
         case 7: break;
-        case 8: if (failedExams != 0) {
-                goToExam();
+        case 8: if (state.failedExams != 0) {
+                goToExam(gen, state);
             }
         default: return;
     }
@@ -373,126 +401,140 @@ void menu(const int n) {
 
 void printWinGame() {
     std::cout << "||======================================||" << std::endl;
-    std::cout << "||  🎓  ПОЗДРАВЛЕНИЯ!                   ||" << std::endl;
-    std::cout << "||  Взе всички изпити и оцеля           ||" << std::endl;
-    std::cout << "||  в сесията на живота си!             ||" << std::endl;
+    std::cout << "||  🎓  CONGRATULATIONS!                ||" << std::endl;
+    std::cout << "||  Took all the exams and survived     ||" << std::endl;
+    std::cout << "||  in the session of a lifetime!       ||" << std::endl;
     std::cout << "||======================================||" << std::endl;
 }
 
 
 void printLostGame() {
     std::cout << "||======================================||" << std::endl;
-    std::cout << "||  💥 ИГРАТА ПРИКЛЮЧИ!                 ||" << std::endl;
-    std::cout << "||  Твоята психика не издържа           ||" << std::endl;
-    std::cout << "||  и си напуснал университета          ||" << std::endl;
+    std::cout << "||  💥 GAME OVER!                       ||" << std::endl;
+    std::cout << "||  Your psyche can't handle it         ||" << std::endl;
+    std::cout << "||  and you dropped out of university!  ||" << std::endl;
     std::cout << "||======================================||" << std::endl;
 }
 
 
-void printExamDays() {
-    std::cout << "❗❗❗Внимание! Дните са изпити са:" << EXAM_1_DAY << "-ия, " << EXAM_2_DAY << "-ия, " << EXAM_3_DAY <<
-            "-ия, " <<
-            exam4Day << "-ия и " << EXAM_5_DAY << "-ия❗❗❗" << std::endl;
+void printExamDays(const GameState &state) {
+    std::cout << "!!! WARNING: Exam days are: " << EXAM_1_DAY << ", " << EXAM_2_DAY << ", "
+            << EXAM_3_DAY << ", " << state.exam4Day << ", " << EXAM_5_DAY << " !!!" << std::endl;
 }
 
-void saveGame() {
+void saveGame(const GameState &state) {
     std::ofstream out(SAVE_FILE);
     if (!out) {
-        std::cout << "Играта не успя да се запази.";
+        std::cout << "The game failed to save.";
         return;
     }
-    double stats[] = {money, energy, psychics, knowledge, successfulExams, day, failedExams};
+    const double stats[] = {
+        state.money, state.energy, state.psychics, state.knowledge, state.successfulExams, state.day, state.failedExams
+    };
     for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
         out << stats[i] << " ";
     }
     out << std::endl;
     out.close();
-    std::cout << "Успешно запзаи играта." << std::endl;
+    std::cout << "Successfully saved the game." << std::endl;
 }
 
 
-bool loadGame() {
+bool loadGame(GameState &state) {
     std::ifstream in(SAVE_FILE);
     if (!in) {
-        std::cout << "Файлът не успя да се отвори.";
+        std::cout << "The file could not be opened.";
         return false;
     }
-    double stats[] = {money, energy, psychics, knowledge, successfulExams, day, failedExams};
+    double stats[] = {
+        state.money, state.energy, state.psychics, state.knowledge, state.successfulExams, state.day, state.failedExams
+    };
     for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
         in >> stats[i];
     }
-    money = stats[0];
-    energy = stats[1];
-    psychics = stats[2];
-    knowledge = stats[3];
-    successfulExams = stats[4];
-    day = stats[5];
-    failedExams = stats[6];
+    state.money = stats[0];
+    state.energy = stats[1];
+    state.psychics = stats[2];
+    state.knowledge = stats[3];
+    state.successfulExams = stats[4];
+    state.day = stats[5];
+    state.failedExams = stats[6];
     in.close();
     return true;
 }
 
 
-void beginGame(const int n) {
+void beginGame(GameState &state, const int n) {
     if (n == 1) {
-        saveGame();
+        saveGame(state);
     }
     if (n == 2) {
-        loadGame();
+        loadGame(state);
     }
 }
 
 
 //============RANDOM_EVENT_FOR_EVERY_DAY=======
-void receiveMoney() {
-    int rand = randomNumber(1, 30);
+void receiveMoney(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 30);
     if (rand < 4) {
-        money += 30;
-        std::cout << "Мама и тате ти пращат пари. +30 пари!" << std::endl;
+        state.money += 30;
+        std::cout << "Mom and Dad sent money. +30 Money!" << std::endl;
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void freeCoffe() {
-    int rand = randomNumber(1, 30);
+void freeCoffe(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 30);
     if (rand < 4) {
-        psychics += 10;
-        std::cout << "Приятел те черпи кафе. +10 психика!" << std::endl;
+        state.psychics += 10;
+        std::cout << "Friend treated you to coffee. +10 Psychics!" << std::endl;
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void getSick() {
-    int rand = randomNumber(1, 30);
+void getSick(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 30);
     if (rand < 4) {
-        energy -= 20;
-        std::cout << "Разболял си се. -20 енергия!" << std::endl;
+        state.energy -= 20;
+        std::cout << "You got sick. -20 Energy!" << std::endl;
     }
-    parameterRestrictions();
+    parameterRestrictions(state);
 }
 
-void noElectricity() {
-    int rand = randomNumber(1, 30);
+void noElectricity(std::mt19937 &gen, GameState &state) {
+    int rand = randomNumber(gen, 1, 30);
     if (rand < 4) {
-        day++;
-        std::cout << "Няма ток в блока, пропускаш действието за деня!" << std::endl;
+        state.day++;
+        std::cout << "There's no power in the block, you're missing out on the action for the day!" << std::endl;
     }
 }
 
-void randomDayEvents() {
-    receiveMoney();
-    freeCoffe();
-    getSick();
-    noElectricity();
+void randomDayEvents(std::mt19937 &gen, GameState &state) {
+    receiveMoney(gen, state);
+    freeCoffe(gen, state);
+    getSick(gen, state);
+    noElectricity(gen, state);
 }
 
 
-int main() {
+void startGame() {
+    std::mt19937 gen(std::random_device{}());
+    GameState state{};
+    state.day = 1;
+    state.money = 0;
+    state.energy = 100;
+    state.psychics = 100;
+    state.knowledge = 0;
+    state.successfulExams = 0;
+    state.failedExams = 0;
+    state.examNumber = 1;
+    state.exam4Day = randomNumber(gen, 27, 44);
     //==========CHOOSE_GAME_START_OPTION=======
     printBeginGame();
     int beginGameOption;
     do {
-        std::cout << "Избери опция 1 или 2:";
+        std::cout << "Choose option 1 or 2:";
         std::cin >> beginGameOption;
         if (std::cin.fail()) {
             std::cin.clear();
@@ -500,7 +542,7 @@ int main() {
             continue;
         }
     } while (beginGameOption != 1 && beginGameOption != 2);
-    beginGame(beginGameOption);
+    beginGame(state, beginGameOption);
 
 
     //=========CHOOSE_DIFFICULTY_LEVEL===========
@@ -508,7 +550,7 @@ int main() {
         printDifficultyLevel();
         int DifficultyLevelOption;
         do {
-            std::cout << "Избери опция 1 или 2 или 3:";
+            std::cout << "Choose option 1 or 2 or 3:";
             std::cin >> DifficultyLevelOption;
             if (std::cin.fail()) {
                 std::cin.clear();
@@ -516,48 +558,63 @@ int main() {
                 continue;
             }
         } while (DifficultyLevelOption != 1 && DifficultyLevelOption != 2 && DifficultyLevelOption != 3);
-        difficultyLevel(DifficultyLevelOption);
+        difficultyLevel(state, DifficultyLevelOption);
     }
 
 
     //=========LOOP_TO_THE_LAST_DAY==========
-    while (day <= 45) {
+    while (state.day <= 45) {
         //============CHOOSE_WHAT_TO_DO_TODAY============
-    backFromOption6:
-        if (energy < 0) {
-            energyLessThanZero();
+        if (state.energy < 0) {
+            energyLessThanZero(state);
         }
-        printStudentStatus();
-        randomDayEvents();
-        printExamDays();
-        if (day == EXAM_1_DAY || day == EXAM_2_DAY || day == EXAM_3_DAY || day == exam4Day || day == EXAM_5_DAY) {
-            std::cout << "Днес е ден за изпит. Отиваш автоматично!" << std::endl;
-            goToExam();
-            day++;
+        printStudentStatus(state);
+        randomDayEvents(gen, state);
+        printExamDays(state);
+        if (state.day == EXAM_1_DAY || state.day == EXAM_2_DAY || state.day == EXAM_3_DAY || state.day == state.exam4Day
+            || state.day == EXAM_5_DAY) {
+            std::cout << "Today is exam day. You're going automatically!" << std::endl;
+            goToExam(gen, state);
+            state.day++;
+            continue;
         }
 
 
-        printMenu();
+        printMenu(state);
         int menuOption;
+        bool validOption = false;
         int studyOption;
         do {
-            std::cout << "Избери опция 1 или 2 или 3 или 4 или 5 или 6 или 7 или 8(ако имаш невзет изпит):";
+            std::cout << "Choose option 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 (if you have an failed exam):";
             std::cin >> menuOption;
             if (std::cin.fail()) {
                 std::cin.clear();
                 std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                std::cout << "Моля избери валидна опция." << std::endl;
+                std::cout << "Please select a valid option." << std::endl;
                 continue;
             }
-        } while (menuOption != 1 && menuOption != 2 && menuOption != 3 && menuOption != 4 && menuOption != 5 &&
-                 menuOption != 6 && menuOption != 7 && menuOption != 8);
+            if (menuOption == 6) {
+                if (state.day != EXAM_1_DAY && state.day != EXAM_2_DAY &&
+                    state.day != EXAM_3_DAY && state.day != state.exam4Day &&
+                    state.day != EXAM_5_DAY) {
+                    std::cout << "It is not the exam day. Possible exam days are the 8th, 17th, 26th, "
+                            << state.exam4Day << "-th and 45th" << std::endl;
+                    continue;
+                }
+            }
+            if ((menuOption >= 1 && menuOption <= 7) || (menuOption == 8 && state.failedExams > 0)) {
+                validOption = true;
+            } else {
+                std::cout << "Please select a valid option." << std::endl;
+            }
+        } while (!validOption);
 
 
         //============STUDY_OPTION_CHOOSE=======
         if (menuOption == 1) {
             printStudyOptions();
             do {
-                std::cout << "Избери опция 1 или 2 или 3:";
+                std::cout << "Choose option 1 or 2 or 3:";
                 std::cin >> studyOption;
                 if (std::cin.fail()) {
                     std::cin.clear();
@@ -565,55 +622,51 @@ int main() {
                     continue;
                 }
             } while (studyOption != 1 && studyOption != 2 && studyOption != 3);
-            studyOptions(studyOption);
+            studyOptions(gen, state, studyOption);
         }
 
 
         //======EXIT_FROM_THE_GAME=========
         if (menuOption == 7) {
-            saveGame();
+            saveGame(state);
             break;
         }
 
 
-        menu(menuOption);
-
-
-        if (menuOption == 6 && day != EXAM_1_DAY && day != EXAM_2_DAY && day != EXAM_3_DAY && day != exam4Day && day !=
-            EXAM_5_DAY) {
-            std::cout << "Не е денят за изпит. Взможните дни за изпит са 8-ия, 17-ия, 26-ия " << exam4Day <<
-                    "-ия и 45-ия" << std::endl;
-            goto backFromOption6;
-        }
+        menu(gen, state, menuOption);
 
 
         //======LOST_GAME
-        if (psychics < 0) {
-            std::cout << "Психиката ти e по-малка от 0." << std::endl;
+        if (state.psychics < 0) {
+            std::cout << "Your psychics is less than 0." << std::endl;
             printLostGame();
             break;
         }
 
-        if (day == 45 && successfulExams < 5) {
-            std::cout << "Мина 45-тия ден, а не си си взел изпитите." << std::endl;
+        if (state.day == 45 && state.successfulExams < 5) {
+            std::cout << "It's been 45 days and you haven't taken your exams." << std::endl;
             printLostGame();
             break;
         }
 
-        if (money < 0) {
-            std::cout << "Парите ти са по-малко от 0." << std::endl;
+        if (state.money < 0) {
+            std::cout << "Your money is less than 0." << std::endl;
             printLostGame();
             break;
         }
 
 
         //WIN_GAME
-        if (successfulExams == 5) {
+        if (state.successfulExams == 5) {
             printWinGame();
             break;
         }
 
 
-        day++;
+        state.day++;
     }
+}
+
+int main() {
+    startGame();
 }
