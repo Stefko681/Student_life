@@ -21,7 +21,7 @@
 
 //========CONSTANTS=============
 const int MAX_PARAMETER_VALUE = 100;
-const int STUDENT_PARAMETERS_COUNT = 7;
+const int STUDENT_PARAMETERS_COUNT = 8;
 const int EXAM_1_DAY = 8;
 const int EXAM_2_DAY = 17;
 const int EXAM_3_DAY = 26;
@@ -35,10 +35,10 @@ struct GameState {
     double psychics;
     double knowledge;
     double successfulExams;
-    double day;
-    double examNumber;
-    double failedExams;
-    double exam4Day;
+    int day;
+    int examNumber;
+    int failedExams;
+    int exam4Day;
 };
 
 //=========RANDOM_GENERATOR==============
@@ -58,6 +58,14 @@ void parameterRestrictions(GameState &state) {
     if (state.knowledge > MAX_PARAMETER_VALUE) {
         state.knowledge = MAX_PARAMETER_VALUE;
     }
+}
+
+
+bool checkLowEnergyFail(std::mt19937 &gen, const double energy) {
+    int randomNum = randomNumber(gen, 1, 100);
+    if (energy < 40 && randomNum > 50) return true;
+    if (energy < 80 && randomNum > 75) return true;
+    return false;
 }
 
 
@@ -173,11 +181,7 @@ void studyHome(std::mt19937 &gen, GameState &state) {
     state.psychics -= 20;
     std::cout << "You studied at home. +20 Knowledge, -15 Energy, -20 Psychics." << std::endl;
     studyRandomEvents(gen, state);
-    int randomNum = randomNumber(gen, 1, 100);
-    if (state.energy < 40 && randomNum > 50) {
-        state.knowledge -= 10;
-        tooLowEnergyMessage();
-    } else if (state.energy < 80 && randomNum > 75) {
+    if (checkLowEnergyFail(gen, state.energy)) {
         state.knowledge -= 10;
         tooLowEnergyMessage();
     }
@@ -190,14 +194,8 @@ void studyWithFriends(std::mt19937 &gen, GameState &state) {
     state.psychics += 10;
     std::cout << "You studied with friends. +5 Knowledge, -10 Energy, +10 Psychics." << std::endl;
     studyRandomEvents(gen, state);
-    int randomNum = randomNumber(gen, 1, 100);
-    if (state.energy < 40 && randomNum > 50) {
-        state.knowledge -= 2.5;
-        state.psychics -= 5;
-        tooLowEnergyMessage();
-    } else if (state.energy < 80 && randomNum > 75) {
-        state.knowledge -= 2.5;
-        state.psychics -= 5;
+    if (checkLowEnergyFail(gen, state.energy)) {
+        state.knowledge -= 10;
         tooLowEnergyMessage();
     }
     parameterRestrictions(state);
@@ -209,14 +207,8 @@ void eat(std::mt19937 &gen, GameState &state) {
     state.psychics += 5;
     std::cout << "You ate something. +20 Energy, -10 Money, +5 Psychics." << std::endl;
     eatRandomEvents(gen, state);
-    int randomNum = randomNumber(gen, 1, 100);
-    if (state.energy < 40 && randomNum > 50) {
-        state.energy -= 10;
-        state.psychics -= 2.5;
-        tooLowEnergyMessage();
-    } else if (state.energy < 80 && randomNum > 75) {
-        state.energy -= 10;
-        state.psychics -= 2.5;
+    if (checkLowEnergyFail(gen, state.energy)) {
+        state.knowledge -= 10;
         tooLowEnergyMessage();
     }
     parameterRestrictions(state);
@@ -253,12 +245,8 @@ void work(std::mt19937 &gen, GameState &state) {
     state.psychics -= 10;
     std::cout << "You went to work. -20 Energy, +40 Money, -20 Psychics." << std::endl;
     workRandomEvents(gen, state);
-    int randomNum = randomNumber(gen, 1, 100);
-    if (state.energy < 40 && randomNum > 50) {
-        state.money -= 20;
-        tooLowEnergyMessage();
-    } else if (state.energy < 80 && randomNum > 75) {
-        state.money -= 20;
+    if (checkLowEnergyFail(gen, state.energy)) {
+        state.knowledge -= 10;
         tooLowEnergyMessage();
     }
     parameterRestrictions(state);
@@ -279,12 +267,8 @@ void goToExam(std::mt19937 &gen, GameState &state) {
         state.failedExams++;
     }
     state.examNumber++;
-    int randomNum = randomNumber(gen, 1, 100);
-    if (state.energy < 40 && randomNum > 50) {
-        state.psychics -= 10;
-        tooLowEnergyMessage();
-    } else if (state.energy < 80 && randomNum > 75) {
-        state.psychics -= 10;
+    if (checkLowEnergyFail(gen, state.energy)) {
+        state.knowledge -= 10;
         tooLowEnergyMessage();
     }
     parameterRestrictions(state);
@@ -437,12 +421,15 @@ void saveGame(const GameState &state) {
         std::cout << "The game failed to save.";
         return;
     }
-    const double stats[] = {
-        state.money, state.energy, state.psychics, state.knowledge, state.successfulExams, state.day, state.failedExams
-    };
-    for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
-        out << stats[i] << " ";
-    }
+    out << state.money << " "
+            << state.energy << " "
+            << state.psychics << " "
+            << state.knowledge << " "
+            << state.successfulExams << " "
+            << state.day << " "
+            << state.failedExams << " "
+            << state.examNumber << " " // <-- Добавихме това
+            << state.exam4Day;
     out << std::endl;
     out.close();
     std::cout << "Successfully saved the game." << std::endl;
@@ -455,19 +442,15 @@ bool loadGame(GameState &state) {
         std::cout << "The file could not be opened.";
         return false;
     }
-    double stats[] = {
-        state.money, state.energy, state.psychics, state.knowledge, state.successfulExams, state.day, state.failedExams
-    };
-    for (int i = 0; i < STUDENT_PARAMETERS_COUNT; i++) {
-        in >> stats[i];
-    }
-    state.money = stats[0];
-    state.energy = stats[1];
-    state.psychics = stats[2];
-    state.knowledge = stats[3];
-    state.successfulExams = stats[4];
-    state.day = stats[5];
-    state.failedExams = stats[6];
+    in >> state.money
+            >> state.energy
+            >> state.psychics
+            >> state.knowledge
+            >> state.successfulExams
+            >> state.day
+            >> state.failedExams
+            >> state.examNumber // <-- Важно е да го прочетем
+            >> state.exam4Day;
     in.close();
     return true;
 }
