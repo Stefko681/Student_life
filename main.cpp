@@ -21,14 +21,13 @@
 
 //========CONSTANTS=============
 const int MAX_PARAMETER_VALUE = 100;
-const int STUDENT_PARAMETERS_COUNT = 8;
 const int EXAM_1_DAY = 8;
 const int EXAM_2_DAY = 17;
 const int EXAM_3_DAY = 26;
 const int EXAM_5_DAY = 45;
 const char *SAVE_FILE = "game.txt";
 
-
+//======STRUCT_FOR_STATS========
 struct GameState {
     double money;
     double energy;
@@ -47,7 +46,7 @@ int randomNumber(std::mt19937 &gen, const int min, const int max) {
     return range(gen);
 }
 
-
+//=====MAX_PARAMETER_RULES====
 void parameterRestrictions(GameState &state) {
     if (state.energy > MAX_PARAMETER_VALUE) {
         state.energy = MAX_PARAMETER_VALUE;
@@ -60,7 +59,7 @@ void parameterRestrictions(GameState &state) {
     }
 }
 
-
+//=====LOW_ENERGY_RULE=====
 bool checkLowEnergyFail(std::mt19937 &gen, const double energy) {
     int randomNum = randomNumber(gen, 1, 100);
     if (energy < 40 && randomNum > 50) return true;
@@ -68,14 +67,15 @@ bool checkLowEnergyFail(std::mt19937 &gen, const double energy) {
     return false;
 }
 
-
+//====ENERGY_LESS_THAN_ZERO_RULE====
 void energyLessThanZero(GameState &state) {
     std::cout << "You passed out! Energy < 0. You miss the next day." << std::endl;
     state.day++;
     state.energy = 40;
+    state.psychics -= 10;
 }
 
-
+//=====MESSAGE_FOR_LOW_ENERGY_RULE=====
 void tooLowEnergyMessage() {
     std::cout << "Your energy is low and unfortunately the effectiveness of half of the action is activated!" <<
             std::endl;
@@ -100,6 +100,8 @@ void studyRandomEvents(std::mt19937 &gen, GameState &state) {
     }
 }
 
+
+//======RANDOM_EVENTS_FOR_ACTIONS
 void workRandomEvents(std::mt19937 &gen, GameState &state) {
     int rand = randomNumber(gen, 1, 100);
     if (rand <= 10) {
@@ -274,7 +276,7 @@ void goToExam(std::mt19937 &gen, GameState &state) {
     parameterRestrictions(state);
 }
 
-
+//======BEGIN_GAME_MESSAGE======
 void printBeginGame() {
     std::cout << "||======================================||" << std::endl;
     std::cout << "||  WELCOME TO STUDENT SIMULATOR        ||" << std::endl;
@@ -283,7 +285,7 @@ void printBeginGame() {
     std::cout << "||======================================||" << std::endl;
 }
 
-
+//========DIFFICULTY_OPTIONS_MESSAGE========
 void printDifficultyLevel() {
     std::cout << "||======================================||" << std::endl;
     std::cout << "||  Choose difficulty level             ||" << std::endl;
@@ -293,7 +295,7 @@ void printDifficultyLevel() {
     std::cout << "||======================================||" << std::endl;
 }
 
-
+//======PARAMETERS_FOR_DIFFICULTLY_LEVELS====
 void difficultyLevel(GameState &state, const int n) {
     if (n == 1) {
         state.knowledge = 80;
@@ -315,22 +317,22 @@ void difficultyLevel(GameState &state, const int n) {
     }
 }
 
-
+//======PRINT_STUDENT_STATS====
 void printStudentStatus(const GameState &state) {
     std::cout << "\n||==========================================||" << std::endl;
-    std::cout << "||  Day: " << state.day << " of 45                  ||" << std::endl;
-    std::cout << "||  Money: " << state.money << " BGN                ||" << std::endl;
-    std::cout << "||  Energy: " << state.energy << "                  ||" << std::endl;
-    std::cout << "||  Psychics: " << state.psychics << "              ||" << std::endl;
-    std::cout << "||  Knowledge: " << state.knowledge << "            ||" << std::endl;
-    std::cout << "||  Passed Exams: " << state.successfulExams << "   ||" << std::endl;
+    std::cout << "||  Day: " << state.day << " of 45\t\t\t\t\t\t\t||" << std::endl;
+    std::cout << "||  Money: " << state.money << " BGN\t\t\t\t\t\t\t||" << std::endl;
+    std::cout << "||  Energy: " << state.energy << "\t\t\t\t\t\t\t\t||" << std::endl;
+    std::cout << "||  Psychics: " << state.psychics << "\t\t\t\t\t\t\t||" << std::endl;
+    std::cout << "||  Knowledge: " << state.knowledge << "\t\t\t\t\t\t\t||" << std::endl;
+    std::cout << "||  Passed Exams: " << state.successfulExams << "\t\t\t\t\t\t\t||" << std::endl;
     if (state.failedExams != 0) {
-        std::cout << "||  Failed Exams: " << state.failedExams << "   ||" << std::endl;
+        std::cout << "||  Failed Exams: " << state.failedExams << "\t\t\t\t\t\t\t||" << std::endl;
     }
     std::cout << "||==========================================||" << std::endl;
 }
 
-
+//======PRINT_DAILY_MENU====
 void printMenu(const GameState &state) {
     std::cout << "What do you want to do today?" << std::endl;
     std::cout << "[1] Study" << std::endl;
@@ -346,6 +348,7 @@ void printMenu(const GameState &state) {
 }
 
 
+//======PRINT_STUDY_OPTIONS=====
 void printStudyOptions() {
     std::cout << "Choose study type:" << std::endl;
     std::cout << "[1] Go to lectures" << std::endl;
@@ -354,6 +357,7 @@ void printStudyOptions() {
 }
 
 
+//====CHOOSE_STUDY_OPTION====
 void studyOptions(std::mt19937 &gen, GameState &state, const int n) {
     if (n == 1) {
         goToLessons(gen, state);
@@ -367,6 +371,7 @@ void studyOptions(std::mt19937 &gen, GameState &state, const int n) {
 }
 
 
+//CHOOSE_MENU_OPTION====
 void menu(std::mt19937 &gen, GameState &state, const int n) {
     switch (n) {
         case 2: eat(gen, state);
@@ -392,6 +397,7 @@ void menu(std::mt19937 &gen, GameState &state, const int n) {
 }
 
 
+//=====WIN_GAME_MESSAGE====
 void printWinGame() {
     std::cout << "||======================================||" << std::endl;
     std::cout << "||  🎓  CONGRATULATIONS!                ||" << std::endl;
@@ -401,6 +407,7 @@ void printWinGame() {
 }
 
 
+//======LOST_GAME_MESSAGE====
 void printLostGame() {
     std::cout << "||======================================||" << std::endl;
     std::cout << "||  💥 GAME OVER!                       ||" << std::endl;
@@ -410,11 +417,14 @@ void printLostGame() {
 }
 
 
+//=====PRINT_DAYS_OF_THE_EXAM====
 void printExamDays(const GameState &state) {
     std::cout << "!!! WARNING: Exam days are: " << EXAM_1_DAY << ", " << EXAM_2_DAY << ", "
             << EXAM_3_DAY << ", " << state.exam4Day << ", " << EXAM_5_DAY << " !!!" << std::endl;
 }
 
+
+//=====SAVE_GAME_IN_FILE======
 void saveGame(const GameState &state) {
     std::ofstream out(SAVE_FILE);
     if (!out) {
@@ -428,7 +438,7 @@ void saveGame(const GameState &state) {
             << state.successfulExams << " "
             << state.day << " "
             << state.failedExams << " "
-            << state.examNumber << " " // <-- Добавихме това
+            << state.examNumber << " "
             << state.exam4Day;
     out << std::endl;
     out.close();
@@ -436,6 +446,7 @@ void saveGame(const GameState &state) {
 }
 
 
+//=====LOAD_GAME_FROM_FILE=====
 bool loadGame(GameState &state) {
     std::ifstream in(SAVE_FILE);
     if (!in) {
@@ -449,20 +460,28 @@ bool loadGame(GameState &state) {
             >> state.successfulExams
             >> state.day
             >> state.failedExams
-            >> state.examNumber // <-- Важно е да го прочетем
+            >> state.examNumber
             >> state.exam4Day;
     in.close();
     return true;
 }
 
 
-void beginGame(GameState &state, const int n) {
+//=====CHOOSE_GAME_OPTION====
+bool beginGame(GameState &state, const int n) {
     if (n == 1) {
-        saveGame(state);
+        return false;
     }
     if (n == 2) {
-        loadGame(state);
+        if (!loadGame(state)) {
+            std::cout << "Save file not found. Starting new game instead..." << std::endl;
+            return false;
+        } else {
+            std::cout << "Game loaded successfully!" << std::endl;
+            return true;
+        }
     }
+    return false;
 }
 
 
@@ -502,6 +521,8 @@ void noElectricity(std::mt19937 &gen, GameState &state) {
     }
 }
 
+
+//====ALL_RANDOM_DAY_EVENTS_TOGETHER=====
 void randomDayEvents(std::mt19937 &gen, GameState &state) {
     receiveMoney(gen, state);
     freeCoffe(gen, state);
@@ -524,6 +545,7 @@ void initialValue(GameState &state, std::mt19937 &gen) {
 }
 
 
+//====START_MENU_LOGIC====
 int handleStartMenu(GameState &state) {
     printBeginGame();
     int option;
@@ -536,12 +558,16 @@ int handleStartMenu(GameState &state) {
             continue;
         }
     } while (option != 1 && option != 2);
-
-    beginGame(state, option);
-    return option;
+    bool isLoaded = beginGame(state, option);
+    if (isLoaded) {
+        return 2;
+    } else {
+        return 1;
+    }
 }
 
 
+//=====DIFFICULTY_MENU_LOGIC======
 void handleDifficultyInput(GameState &state) {
     printDifficultyLevel();
     int level;
@@ -558,12 +584,15 @@ void handleDifficultyInput(GameState &state) {
 }
 
 
+//====CHECK_IF_TODAY_IS_AN_EXAM_DAY======
 bool isExamDay(const GameState &state) {
     return (state.day == EXAM_1_DAY || state.day == EXAM_2_DAY ||
             state.day == EXAM_3_DAY || state.day == state.exam4Day ||
             state.day == EXAM_5_DAY);
 }
 
+
+//=====DAILY_MENU_OPTIONS====
 int getUserAction(const GameState &state) {
     printMenu(state);
     int option;
@@ -578,8 +607,6 @@ int getUserAction(const GameState &state) {
             std::cout << "Invalid input." << std::endl;
             continue;
         }
-
-        // Проверка за опит за изпит в грешен ден
         if (option == 6 && !isExamDay(state)) {
             std::cout << "Not an exam day! Check the schedule." << std::endl;
             continue;
@@ -594,7 +621,7 @@ int getUserAction(const GameState &state) {
     return option;
 }
 
-
+//====TYPE_OF_STUDY_LOGIC=====
 void processStudyAction(std::mt19937 &gen, GameState &state) {
     printStudyOptions();
     int studyOption;
@@ -611,7 +638,7 @@ void processStudyAction(std::mt19937 &gen, GameState &state) {
 }
 
 
-//===========CHEK_IF_THE_GAME_HAS_ENDED
+//========CHEK_IF_THE_GAME_HAS_ENDED=======
 bool checkGameEnd(const GameState &state) {
     if (state.psychics < 0) {
         std::cout << "Psychics dropped below 0." << std::endl;
@@ -635,25 +662,21 @@ bool checkGameEnd(const GameState &state) {
     return false;
 }
 
+
+//====CYCLE_OF_THE_GAME====
 void startGame() {
     std::mt19937 gen(std::random_device{}());
     GameState state{};
     initialValue(state, gen);
-
-
     if (handleStartMenu(state) == 1) {
         handleDifficultyInput(state);
     }
-
-
     while (state.day <= 45) {
         if (state.energy < 0) energyLessThanZero(state);
 
         printStudentStatus(state);
         randomDayEvents(gen, state);
         printExamDays(state);
-
-
         if (isExamDay(state)) {
             std::cout << "Today is exam day! Good luck!" << std::endl;
             goToExam(gen, state);
@@ -661,10 +684,7 @@ void startGame() {
             if (checkGameEnd(state)) break;
             continue;
         }
-
-
         int action = getUserAction(state);
-
         if (action == 7) {
             saveGame(state);
             break;
@@ -674,12 +694,9 @@ void startGame() {
         } else {
             menu(gen, state, action);
         }
-
-
         if (checkGameEnd(state)) {
             break;
         }
-
         state.day++;
     }
 }
