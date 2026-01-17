@@ -46,6 +46,7 @@ int randomNumber(std::mt19937 &gen, const int min, const int max) {
     return range(gen);
 }
 
+
 //=====MAX_PARAMETER_RULES====
 void parameterRestrictions(GameState &state) {
     if (state.energy > MAX_PARAMETER_VALUE) {
@@ -101,7 +102,7 @@ void studyRandomEvents(std::mt19937 &gen, GameState &state) {
 }
 
 
-//======RANDOM_EVENTS_FOR_ACTIONS
+//======RANDOM_EVENTS_FOR_ACTIONS====
 void workRandomEvents(std::mt19937 &gen, GameState &state) {
     int rand = randomNumber(gen, 1, 100);
     if (rand <= 10) {
@@ -545,7 +546,7 @@ void initialValue(GameState &state, std::mt19937 &gen) {
 }
 
 
-//====START_MENU_LOGIC====
+//====START_MENU_INPUT_CHECK====
 int handleStartMenu(GameState &state) {
     printBeginGame();
     int option;
@@ -555,6 +556,7 @@ int handleStartMenu(GameState &state) {
         if (std::cin.fail()) {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input." << std::endl;
             continue;
         }
     } while (option != 1 && option != 2);
@@ -567,7 +569,7 @@ int handleStartMenu(GameState &state) {
 }
 
 
-//=====DIFFICULTY_MENU_LOGIC======
+//=====DIFFICULTY_MENU_INPUT_CHECK======
 void handleDifficultyInput(GameState &state) {
     printDifficultyLevel();
     int level;
@@ -577,6 +579,7 @@ void handleDifficultyInput(GameState &state) {
         if (std::cin.fail()) {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input." << std::endl;
             continue;
         }
     } while (level < 1 || level > 3);
