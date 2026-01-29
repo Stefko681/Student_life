@@ -267,9 +267,33 @@ void goToExam(std::mt19937 &gen, GameState &state) {
     } else {
         state.psychics -= 30;
         std::cout << "Unfortunately, you failed the exam." << std::endl;
-        state.failedExams++;
+        if (state.failedExams<1){
+            state.failedExams++;
+        }
     }
     state.examNumber++;
+    if (checkLowEnergyFail(gen, state.energy)) {
+        state.knowledge -= 10;
+        tooLowEnergyMessage();
+    }
+    parameterRestrictions(state);
+}
+
+void goToFailedExam(std::mt19937 &gen, GameState &state) {
+    state.energy -= 20;
+    int luck = randomNumber(gen, 1, 100);
+    double success = (state.knowledge * 0.75) + (state.psychics * 0.1) + (state.energy * 0.1) + (luck * 0.2);
+    if (success > 80.0) {
+        state.successfulExams++;
+        state.psychics += 20;
+        std::cout << "Congratulations! You passed the exam!" << std::endl;
+        state.examNumber++;
+        state.failedExams = 0;
+    } else {
+        state.psychics -= 30;
+        std::cout << "Unfortunately, you failed the exam." << std::endl;
+    }
+
     if (checkLowEnergyFail(gen, state.energy)) {
         state.knowledge -= 10;
         tooLowEnergyMessage();
@@ -343,8 +367,8 @@ void printMenu(const GameState &state) {
     std::cout << "[5] Work" << std::endl;
     std::cout << "[6] Take Exam (if it is time)" << std::endl;
     std::cout << "[7] Save & Exit" << std::endl;
-    if (state.failedExams != 0) {
-        std::cout << "[8] Retake Exam (Penalty): " << state.failedExams << std::endl;
+    if (state.failedExams == 1) {
+        std::cout << "[8] Retake Exam (Penalty): " << std::endl;
     }
 }
 
@@ -391,7 +415,7 @@ void menu(std::mt19937 &gen, GameState &state, const int n) {
             break;
         case 7: break;
         case 8: if (state.failedExams != 0) {
-                goToExam(gen, state);
+                goToFailedExam(gen, state);
             }
         default: return;
     }
@@ -660,6 +684,11 @@ bool checkGameEnd(const GameState &state) {
     }
     if (state.successfulExams == 5) {
         printWinGame();
+        return true;
+    }
+    if (state.failedExams >0 && (state.day == EXAM_1_DAY || state.day == EXAM_2_DAY || state.day == EXAM_3_DAY || state.day == state.exam4Day || state.day == EXAM_5_DAY)) {
+        std::cout << "Failed more dthan one exam!" << std::endl;
+        printLostGame();
         return true;
     }
     return false;
