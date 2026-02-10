@@ -19,6 +19,10 @@
 #include <limits>
 #include <random>
 
+
+
+
+//have to fix the misssed day random event
 //========CONSTANTS=============
 const int MAX_PARAMETER_VALUE = 100;
 const int EXAM_1_DAY = 8;
